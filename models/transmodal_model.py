@@ -46,7 +46,7 @@ class TransModalModel(BaseModel):
         BaseModel.__init__(self, opt)
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
         #self.loss_names = ['G_GAN', 'G_L1', 'D_real', 'D_fake']
-        self.loss_names = ['G_A', 'G_B', 'D_real', 'D_A_fake', 'D_B_fake']
+        self.loss_names = ['G_A', 'G_B', 'G_A_L1', 'G_B_L1', 'D_real', 'D_fakeAB', 'D_fakeBA']
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
         self.visual_names = ['real1', 'fake2', 'real2', 'fake1']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
@@ -123,12 +123,14 @@ class TransModalModel(BaseModel):
         fake_BA = torch.cat((self.fake_A, self.real_B), 1)
         pred_fake_BA = self.netD(fake_BA)
 
-        self.loss_G_GAN = self.criterionGAN(pred_fake_AB, True) + self.criterionGAN(pred_fake_BA, True)
+        self.loss_G_A = self.criterionGAN(pred_fake_AB, True)
+        self.loss_G_B = self.criterionGAN(pred_fake_BA, True)
+
         # Second, G(A) = B
         self.loss_G_A_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         self.loss_G_B_L1 = self.criterionL1(self.fake_A, self.real_A) * self.opt.lambda_L1
         # combine loss and calculate gradients
-        self.loss_G = self.loss_G_GAN + self.loss_G_A_L1 + self.loss_G_B_L1
+        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_G_A_L1 + self.loss_G_B_L1
         self.loss_G.backward()
 
     def optimize_parameters(self):
