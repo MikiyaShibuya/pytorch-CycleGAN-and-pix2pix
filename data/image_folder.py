@@ -31,6 +31,32 @@ def make_dataset(dir, max_dataset_size=float("inf")):
                 images.append(path)
     return images[:min(max_dataset_size, len(images))]
 
+def make_paired_dataset(dirA, dirB, max_dataset_size=float("inf")):
+    imagesA = []
+    imagesB = []
+    assert os.path.isdir(dirA), '%s is not a valid directory' % dirA
+    assert os.path.isdir(dirB), '%s is not a valid directory' % dirB
+
+    for root, _, fnames in sorted(os.walk(dirA)):
+        for fname in fnames:
+            if is_image_file(fname):
+                path = os.path.join(root, fname)
+                imagesA.append(path)
+    for root, _, fnames in sorted(os.walk(dirB)):
+        for fname in fnames:
+            if is_image_file(fname):
+                path = os.path.join(root, fname)
+                imagesB.append(path)
+    fn_setA = set([fn.split(dirA)[1] for fn in imagesA])
+    fn_setB = set([fn.split(dirB)[1] for fn in imagesB])
+    intersection = fn_setA & fn_setB
+
+    imagesA = [dirA + fn for fn in intersection]
+    imagesB = [dirB + fn for fn in intersection]
+
+    datasize = len(intersection)
+    return imagesA[:min(max_dataset_size, datasize)], imagesB[:min(max_dataset_size, datasize)]
+
 
 def default_loader(path):
     return Image.open(path).convert('RGB')
