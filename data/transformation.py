@@ -7,6 +7,10 @@ class Compose(object):
         self.transformations = transformations
 
     def __call__(self, fir_image, rgb_image):
+        bound = ((-20 + 273.15)/0.04, (80 + 273.15)/0.04)
+        fir_image = 2*fir_image/(bound[1] - bound[0]) - (bound[1]+bound[0])/(bound[1]-bound[0])
+        fir_image = np.clip(fir_image, -1, 1)
+        rgb_image = (rgb_image - 127.5)/127.5
         for t in self.transformations:
             fir_image, rgb_image = t(fir_image, rgb_image)
 
