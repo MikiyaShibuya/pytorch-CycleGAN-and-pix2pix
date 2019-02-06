@@ -2,6 +2,7 @@ import torch
 import itertools
 from .base_model import BaseModel
 from . import networks
+import numpy as np
 
 
 class TransModalModel(BaseModel):
@@ -30,7 +31,7 @@ class TransModalModel(BaseModel):
         By default, we use vanilla GAN loss, UNet with batchnorm, and aligned datasets.
         """
         # changing the default values to match the pix2pix paper (https://phillipi.github.io/pix2pix/)
-        parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='paired', input_nc=1)
+        parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='paired', input_nc=1, load_size=480)
         if is_train:
             parser.set_defaults(pool_size=0, gan_mode='vanilla')
             parser.add_argument('--lambda_L1', type=float, default=100.0, help='weight for L1 loss')
@@ -48,7 +49,7 @@ class TransModalModel(BaseModel):
         #self.loss_names = ['G_GAN', 'G_L1', 'D_real', 'D_fake']
         self.loss_names = ['G_A', 'G_B', 'G_A_L1', 'G_B_L1', 'D_real', 'D_fakeAB', 'D_fakeBA']
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
-        self.visual_names = ['real_A', 'fake_B', 'real_B', 'fake_A']
+        self.visual_names = ['real_A_viz', 'fake_B', 'real_B', 'fake_A_viz']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
         if self.isTrain:
             self.model_names = ['G_A', 'G_B', 'D']
@@ -88,12 +89,21 @@ class TransModalModel(BaseModel):
         AtoB = self.opt.direction == 'AtoB'
         self.real_A = input['A' if AtoB else 'B'].to(self.device)
         self.real_B = input['B' if AtoB else 'A'].to(self.device)
+        self.real_A_viz = self.fake_fir(self.real_A)
         self.image_paths = input['A_paths' if AtoB else 'B_paths']
+
+    def fake_fir(self, fir_tensor, n_sigma=2):
+        fir = fir_tensor.clone()
+        fir.detach()
+        m = fir.mean().item()
+        sd = np.sqrt((fir**2).mean().item())
+        return (fir - m + n_sigma*sd)/(2*n_sigma*sd)
 
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
         self.fake_B = self.netG_A(self.real_A)
         self.fake_A = self.netG_B(self.real_B)
+        self.fake_A_viz = self.fake_fir(self.fake_A)
 
 
     def backward_D(self):
