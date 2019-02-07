@@ -31,7 +31,7 @@ class TransModalModel(BaseModel):
         By default, we use vanilla GAN loss, UNet with batchnorm, and aligned datasets.
         """
         # changing the default values to match the pix2pix paper (https://phillipi.github.io/pix2pix/)
-        parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='paired', input_nc=1, load_size=480)
+        parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='paired', input_nc=1, load_size=240)
         if is_train:
             parser.set_defaults(pool_size=0, gan_mode='vanilla')
             parser.add_argument('--lambda_L1', type=float, default=100.0, help='weight for L1 loss')
@@ -92,12 +92,10 @@ class TransModalModel(BaseModel):
         self.real_A_viz = self.fake_fir(self.real_A)
         self.image_paths = input['A_paths' if AtoB else 'B_paths']
 
-    def fake_fir(self, fir_tensor, n_sigma=2):
+    def fake_fir(self, fir_tensor):
         fir = fir_tensor.clone()
         fir.detach()
-        m = fir.mean().item()
-        sd = np.sqrt((fir**2).mean().item())
-        return (fir - m + n_sigma*sd)/(2*n_sigma*sd)
+        return (torch.clamp(fir, -0.8, 0.2)+0.3)*2
 
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
