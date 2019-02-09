@@ -2,7 +2,6 @@ import torch
 import itertools
 from .base_model import BaseModel
 from . import networks
-import numpy as np
 
 
 class TransModalModel(BaseModel):
@@ -77,7 +76,6 @@ class TransModalModel(BaseModel):
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
 
-
     def set_input(self, input):
         """Unpack input data from the dataloader and perform necessary pre-processing steps.
 
@@ -102,7 +100,6 @@ class TransModalModel(BaseModel):
         self.fake_B = self.netG_A(self.real_A)
         self.fake_A = self.netG_B(self.real_B)
         self.fake_A_viz = self.fake_fir(self.fake_A)
-
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""

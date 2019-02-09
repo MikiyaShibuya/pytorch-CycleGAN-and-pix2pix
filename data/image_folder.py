@@ -31,6 +31,7 @@ def make_dataset(dir, max_dataset_size=float("inf")):
                 images.append(path)
     return images[:min(max_dataset_size, len(images))]
 
+
 def make_paired_dataset(dirA, dirB, max_dataset_size=float("inf")):
     imagesA = []
     imagesB = []

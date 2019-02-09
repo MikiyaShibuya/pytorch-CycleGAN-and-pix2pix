@@ -38,7 +38,6 @@ class PairedDataset(BaseDataset):
             Scale(opt.crop_size)
         ])
 
-
     def __oldgetitem__(self, index):
         """Return a data point and its metadata information.
 
@@ -68,7 +67,6 @@ class PairedDataset(BaseDataset):
         B = B_transform(B)
 
         return {'A': A, 'B': B, 'A_paths': A_path, 'B_paths': B_path}
-
 
     def __getitem__(self, index):
         """Return a data point and its metadata information.
