@@ -86,9 +86,12 @@ if __name__ == '__main__':
                 model.forward()
                 losses = model.get_current_losses()
                 N = 1
-                for k, l in losses.items():
-                    losses_sum[k] += l
-                    N += 1
+                if len(losses_sum.keys()) == 0:
+                    losses_sum = losses
+                else:
+                    for k, l in losses.items():
+                        losses_sum[k] += l
+                        N += 1
 
             for k in losses_sum.keys():
                 losses_sum[k] /= N
