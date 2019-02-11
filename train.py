@@ -69,8 +69,6 @@ if __name__ == '__main__':
                 model.save_networks(save_suffix)
 
             iter_data_time = time.time()
-            if i >= 1:
-                break
 
         if epoch % opt.save_epoch_freq == 0:              # cache our model every <save_epoch_freq> epochs
             print('saving the model at the end of epoch %d, iters %d' % (epoch, total_iters))
@@ -78,7 +76,6 @@ if __name__ == '__main__':
             model.save_networks(epoch)
 
         if epoch % opt.validation_epoch_freq == 0:
-            #opt.phase = 'validation'
 
             losses_sum = {}
             for i, data in enumerate(validation_set):
