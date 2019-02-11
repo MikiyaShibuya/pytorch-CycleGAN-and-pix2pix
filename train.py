@@ -84,14 +84,14 @@ if __name__ == '__main__':
                 losses = model.get_current_losses()
                 N = 1
                 if len(losses_sum.keys()) == 0:
-                    losses_sum = losses
-                else:
-                    for k, l in losses.items():
-                        losses_sum[k] += l
-                        N += 1
+                    for k in losses.keys():
+                        losses_sum.update({k+'_sum': 0})
+                for k, l in losses.items():
+                    losses_sum[k+'_sum'] += l
+                    N += 1
 
             for k in losses_sum.keys():
-                losses_sum[k] /= N
+                losses_sum[k+'_sum'] /= N
 
             if opt.display_id > 0:
                 visualizer.plot_validation_losses(epoch, float(epoch_iter) / dataset_size, losses_sum)
