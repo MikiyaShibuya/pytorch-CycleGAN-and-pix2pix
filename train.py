@@ -20,13 +20,14 @@ See frequently asked questions at: https://github.com/junyanz/pytorch-CycleGAN-a
 """
 import time
 from options.train_options import TrainOptions
-from data import create_dataset
+from data import create_dataset, create_validation_set
 from models import create_model
 from util.visualizer import Visualizer
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
+    validation_set = create_validation_set(opt)
     dataset_size = len(dataset)    # get the number of images in the dataset.
     print('The number of training images = %d' % dataset_size)
 
@@ -68,10 +69,32 @@ if __name__ == '__main__':
                 model.save_networks(save_suffix)
 
             iter_data_time = time.time()
+            if i >= 1:
+                break
+
         if epoch % opt.save_epoch_freq == 0:              # cache our model every <save_epoch_freq> epochs
             print('saving the model at the end of epoch %d, iters %d' % (epoch, total_iters))
             model.save_networks('latest')
             model.save_networks(epoch)
+
+        if epoch % opt.validation_epoch_freq == 0:
+            #opt.phase = 'validation'
+
+            losses_sum = {}
+            for i, data in enumerate(validation_set):
+                model.set_input(data)
+                model.forward()
+                losses = model.get_current_losses()
+                N = 1
+                for k, l in losses.items():
+                    losses_sum[k] += l
+                    N += 1
+
+            for k in losses_sum.keys():
+                losses_sum[k] /= N
+
+            if opt.display_id > 0:
+                visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, losses_sum)
 
         print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
         model.update_learning_rate()                     # update learning rates at the end of every epoch.

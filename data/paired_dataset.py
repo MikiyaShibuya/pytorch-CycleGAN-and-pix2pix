@@ -12,7 +12,7 @@ class PairedDataset(BaseDataset):
     The paired images are saved as same name in trainA, trainB.
     """
 
-    def __init__(self, opt):
+    def __init__(self, opt, validation=False):
         """Initialize this dataset class.
 
         Parameters:
@@ -21,8 +21,11 @@ class PairedDataset(BaseDataset):
 
 
         BaseDataset.__init__(self, opt)
-        self.dir_A = os.path.join(opt.dataroot, opt.phase + 'A')  # create a path '/path/to/data/trainA'
-        self.dir_B = os.path.join(opt.dataroot, opt.phase + 'B')  # create a path '/path/to/data/trainB'
+        phase = opt.phase
+        if validation:
+            phase = 'validation'
+        self.dir_A = os.path.join(opt.dataroot, phase + 'A')  # create a path '/path/to/data/trainA'
+        self.dir_B = os.path.join(opt.dataroot, phase + 'B')  # create a path '/path/to/data/trainB'
 
         self.A_paths, self.B_paths = make_paired_dataset(self.dir_A, self.dir_B, opt.max_dataset_size)
 
