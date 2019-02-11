@@ -91,7 +91,7 @@ if __name__ == '__main__':
                     N += 1
 
             for k in losses_sum.keys():
-                losses_sum[k+'_sum'] /= N
+                losses_sum[k] /= N
 
             if opt.display_id > 0:
                 visualizer.plot_validation_losses(epoch, float(epoch_iter) / dataset_size, losses_sum)
