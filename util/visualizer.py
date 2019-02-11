@@ -207,7 +207,7 @@ class Visualizer():
         except VisdomExceptionBase:
             self.create_visdom_connections()
 
-    '''def plot_validation_losses(self, epoch, counter_ratio, losses):
+    def plot_validation_losses(self, epoch, counter_ratio, losses):
         """display the current losses on visdom display: dictionary of error labels and values
 
         Parameters:
@@ -224,13 +224,13 @@ class Visualizer():
                 X=np.stack([np.array(self.plot_data['X'])] * len(self.plot_data['legend']), 1),
                 Y=np.array(self.plot_data['Y']),
                 opts={
-                    'title': self.name + ' loss over time',
+                    'title': self.name + ' validation losses over time',
                     'legend': self.plot_data['legend'],
                     'xlabel': 'epoch',
                     'ylabel': 'loss'},
                 win=self.display_id)
         except VisdomExceptionBase:
-            self.create_visdom_connections()'''
+            self.create_visdom_connections()
 
     # losses: same format as |losses| of plot_current_losses
     def print_current_losses(self, epoch, iters, losses, t_comp, t_data):
