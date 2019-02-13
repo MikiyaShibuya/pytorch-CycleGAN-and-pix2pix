@@ -94,7 +94,7 @@ if __name__ == '__main__':
                 losses_sum[k] /= N
 
             if opt.display_id > 0:
-                visualizer.plot_validation_losses(epoch, float(epoch_iter) / dataset_size, losses_sum)
+                visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, losses_sum)
 
         print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
         model.update_learning_rate()                     # update learning rates at the end of every epoch.

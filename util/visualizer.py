@@ -90,6 +90,8 @@ class Visualizer():
             now = time.strftime("%c")
             log_file.write('================ Training Loss (%s) ================\n' % now)
 
+        self.all_losses = {}
+
     def reset(self):
         """Reset the self.saved status"""
         self.saved = False
@@ -190,10 +192,22 @@ class Visualizer():
             counter_ratio (float) -- progress (percentage) in the current epoch, between 0 to 1
             losses (OrderedDict)  -- training losses stored in the format of (name, float) pairs
         """
+        
+        if len(self.all_losses) == 0:
+            for k, l in losses.items():
+                if k.endswith('_sum'):
+                    self.all_losses.update({k.split('_sum')[0]: 0})
+                    self.all_losses.update({k:0})
+                else:
+                    self.all_losses.update({k:0})
+                    self.all_losses.update({k+'_sum':0})
+        for k, l in losses.items():
+            self.all_losses.update({k: l})
+        
         if not hasattr(self, 'plot_data'):
-            self.plot_data = {'X': [], 'Y': [], 'legend': list(losses.keys())}
+            self.plot_data = {'X': [], 'Y': [], 'legend': list(self.all_losses.keys())}
         self.plot_data['X'].append(epoch + counter_ratio)
-        self.plot_data['Y'].append([losses[k] for k in self.plot_data['legend']])
+        self.plot_data['Y'].append([self.all_losses[k] for k in self.plot_data['legend']])
         try:
             self.vis.line(
                 X=np.stack([np.array(self.plot_data['X'])] * len(self.plot_data['legend']), 1),
