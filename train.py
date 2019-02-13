@@ -85,9 +85,9 @@ if __name__ == '__main__':
                 N = 1
                 if len(losses_sum.keys()) == 0:
                     for k in losses.keys():
-                        losses_sum.update({k+'_sum': 0})
+                        losses_sum.update({'val_'+k: 0})
                 for k, l in losses.items():
-                    losses_sum[k+'_sum'] += l
+                    losses_sum['val_'+k] += l
                     N += 1
 
             for k in losses_sum.keys():
