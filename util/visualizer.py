@@ -195,12 +195,12 @@ class Visualizer():
         
         if len(self.all_losses) == 0:
             for k, l in losses.items():
-                if k.endswith('_sum'):
-                    self.all_losses.update({k.split('_sum')[0]: 0})
+                if k.startswith('val_'):
+                    self.all_losses.update({k.split('val_')[1]: 0})
                     self.all_losses.update({k:0})
                 else:
                     self.all_losses.update({k:0})
-                    self.all_losses.update({k+'_sum':0})
+                    self.all_losses.update({'val_'+k: 0})
         for k, l in losses.items():
             self.all_losses.update({k: l})
         
