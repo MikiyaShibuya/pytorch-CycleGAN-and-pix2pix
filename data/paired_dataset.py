@@ -3,7 +3,7 @@ from data.base_dataset import BaseDataset, get_params, get_transform
 from data.image_folder import make_paired_dataset
 from PIL import Image
 import numpy as np
-from data.transformation import Compose, RandomHorizontalFlip, Scale, RandomCrop
+from data.transformation import Compose, RandomHorizontalFlip, Scale, RandomCrop, Rotate
 
 
 class PairedDataset(BaseDataset):
@@ -38,6 +38,7 @@ class PairedDataset(BaseDataset):
         self.transforms = Compose([
             RandomHorizontalFlip(),
             RandomCrop(opt.load_size),
+            Rotate(2.0),
             Scale(opt.crop_size)
         ])
 
