@@ -44,3 +44,20 @@ class Scale(object):
         fir_image = transform.resize(fir, (self.size, self.size), mode='reflect', anti_aliasing=True).astype(np.float32)
         rgb_image = transform.resize(rgb, (self.size, self.size), mode='reflect', anti_aliasing=True).astype(np.float32)
         return fir_image, rgb_image
+
+class Rotate(object):
+    def __init__(self, max_degree):
+        self.max_degree = max_degree
+    def __call__(self, fir, rgb):
+        angle = np.random.uniform(-self.max_degree, self.max_degree)
+        size_bef = np.array(fir.shape)
+        fir_image = transform.rotate(fir, angle, resize=True)
+        rgb_image = transform.rotate(rgb, angle, resize=True)
+        size_aft = np.array(fir_image.shape)
+        new_size = size_bef**2/size_aft
+        pad = np.ceil((size_bef - new_size)/2)
+        h1 = int(pad[0])
+        h2 = size_bef[0] - h1
+        w1 = int(pad[1])
+        w2 = size_bef[1] - w1
+        return fir_image[h1:h2,w1:w2], rgb_image[h1:h2,w1:w2,:]
