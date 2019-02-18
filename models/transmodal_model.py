@@ -46,9 +46,9 @@ class TransModalModel(BaseModel):
         BaseModel.__init__(self, opt)
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
         #self.loss_names = ['G_GAN', 'G_L1', 'D_real', 'D_fake']
-        self.loss_names = ['G_A', 'G_B', 'G_A_L1', 'G_B_L1', 'D_real', 'D_fakeAB', 'D_fakeBA']
+        self.loss_names = ['G_A', 'G_B', 'G_A_L1', 'G_B_L1', 'D_real', 'D_fakeAB', 'D_fakeBA', 'Cycle_A', 'Cycle_B']
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
-        self.visual_names = ['real_A_viz', 'fake_B', 'real_B', 'fake_A_viz']
+        self.visual_names = ['real_A_viz', 'fake_A_viz', 'rec_A_viz', 'real_B', 'fake_B', 'rec_B']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
         if self.isTrain:
             self.model_names = ['G_A', 'G_B', 'D']
@@ -69,6 +69,7 @@ class TransModalModel(BaseModel):
             # define loss functions
             self.criterionGAN = networks.GANLoss(opt.gan_mode).to(self.device)
             self.criterionL1 = torch.nn.L1Loss()
+            self.criterionCycle = torch.nn.L1Loss()
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
             self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
                                                 lr=opt.lr, betas=(opt.beta1, 0.999))
@@ -98,8 +99,13 @@ class TransModalModel(BaseModel):
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
         self.fake_B = self.netG_A(self.real_A)
+        self.rec_A = self.netG_B(self.fake_B)
         self.fake_A = self.netG_B(self.real_B)
+        self.rec_B = self.netG_A(self.fake_A)
+
+        # FIR image visualization.
         self.fake_A_viz = self.fake_fir(self.fake_A)
+        self.rec_A_viz = self.fake_fir(self.rec_A)
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
@@ -116,6 +122,7 @@ class TransModalModel(BaseModel):
         real_AB = torch.cat((self.real_A, self.real_B), 1)
         pred_real = self.netD(real_AB)
         self.loss_D_real = self.criterionGAN(pred_real, True)
+
         # combine loss and calculate gradients
         self.loss_D = (self.loss_D_fakeAB * 0.25 + self.loss_D_fakeBA * 0.25 + self.loss_D_real * 0.5)
 
@@ -134,8 +141,14 @@ class TransModalModel(BaseModel):
         # Second, G(A) = B
         self.loss_G_A_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         self.loss_G_B_L1 = self.criterionL1(self.fake_A, self.real_A) * self.opt.lambda_L1
+
+        # Cycle consistency losses
+        self.loss_Cycle_A = self.criterionCycle(self.rec_A, self.real_A)
+        self.loss_Cycle_B = self.criterionCycle(self.rec_B, self.real_B)
+
         # combine loss and calculate gradients
-        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_G_A_L1 + self.loss_G_B_L1
+        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_G_A_L1 + self.loss_G_B_L1 \
+                      + self.loss_Cycle_A + self.loss_Cycle_B
         self.loss_G.backward()
 
     def optimize_parameters(self):
