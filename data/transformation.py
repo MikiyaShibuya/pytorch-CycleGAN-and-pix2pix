@@ -54,10 +54,10 @@ class Rotate(object):
         fir_image = transform.rotate(fir, angle, resize=True)
         rgb_image = transform.rotate(rgb, angle, resize=True)
         size_aft = np.array(fir_image.shape)
-        new_size = size_bef**2/size_aft
-        pad = np.ceil((size_bef - new_size)/2)
+        new_size = size_bef ** 2 / size_aft
+        pad = np.ceil((size_aft - new_size) / 2) + 1
         h1 = int(pad[0])
-        h2 = size_bef[0] - h1
+        h2 = size_aft[0] - h1
         w1 = int(pad[1])
-        w2 = size_bef[1] - w1
-        return fir_image[h1:h2,w1:w2], rgb_image[h1:h2,w1:w2,:]
+        w2 = size_aft[1] - w1
+        return fir_image[h1:h2, w1:w2], rgb_image[h1:h2, w1:w2, :]
