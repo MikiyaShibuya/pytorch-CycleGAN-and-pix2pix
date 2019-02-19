@@ -45,7 +45,7 @@ class TransModalModel(BaseModel):
         """
         BaseModel.__init__(self, opt)
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
-        self.loss_names = ['G_A', 'G_B', 'G_A_L1', 'G_B_L1', 'D_real', 'D_fakeAB', 'D_fakeBA', 'Cycle_A', 'Cycle_B']
+        self.loss_names = ['G_A', 'G_B', 'G_A_L1', 'G_B_L1', 'D_realAB', 'D_realBA', 'D_fakeAB', 'D_fakeBA', 'Cycle_A', 'Cycle_B']
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
         self.visual_names = ['real_A_viz', 'fake_A_viz', 'rec_A_viz', 'real_B', 'fake_B', 'rec_B']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
