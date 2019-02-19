@@ -45,13 +45,12 @@ class TransModalModel(BaseModel):
         """
         BaseModel.__init__(self, opt)
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
-        #self.loss_names = ['G_GAN', 'G_L1', 'D_real', 'D_fake']
         self.loss_names = ['G_A', 'G_B', 'G_A_L1', 'G_B_L1', 'D_real', 'D_fakeAB', 'D_fakeBA', 'Cycle_A', 'Cycle_B']
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
         self.visual_names = ['real_A_viz', 'fake_A_viz', 'rec_A_viz', 'real_B', 'fake_B', 'rec_B']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
         if self.isTrain:
-            self.model_names = ['G_A', 'G_B', 'D']
+            self.model_names = ['G_A', 'G_B', 'D_AB', 'D_BA']
         else:  # during test time, only load G
             self.model_names = ['G_A', 'G_B']
         # define networks (both generator and discriminator)
@@ -61,8 +60,10 @@ class TransModalModel(BaseModel):
                                       not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
 
         if self.isTrain:  # define a discriminator; conditional GANs need to take both input and output images; Therefore, #channels for D is input_nc + output_nc
-            self.netD = networks.define_D(opt.input_nc + opt.output_nc, opt.ndf, opt.netD,
-                                           opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
+            self.netD_AB = networks.define_D(opt.input_nc + opt.output_nc, opt.ndf, opt.netD,
+                                             opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
+            self.netD_BA = networks.define_D(opt.input_nc + opt.output_nc, opt.ndf, opt.netD,
+                                             opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
 
         if self.isTrain:
 
@@ -73,7 +74,8 @@ class TransModalModel(BaseModel):
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
             self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
                                                 lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+            self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_AB.parameters(), self.netD_BA.parameters()),
+                                                lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
 
@@ -111,29 +113,31 @@ class TransModalModel(BaseModel):
         """Calculate GAN loss for the discriminator"""
         # Fake; stop backprop to the generator by detaching fake_B
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
-        pred_fake_AB = self.netD(fake_AB.detach())
+        pred_fake_AB = self.netD_AB(fake_AB.detach())
         self.loss_D_fakeAB = self.criterionGAN(pred_fake_AB, False)
 
         fake_BA = torch.cat((self.fake_A, self.real_B), 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
-        pred_fake_BA = self.netD(fake_BA.detach())
+        pred_fake_BA = self.netD_BA(fake_BA.detach())
         self.loss_D_fakeBA = self.criterionGAN(pred_fake_BA, False)
 
         # Real
         real_AB = torch.cat((self.real_A, self.real_B), 1)
-        pred_real = self.netD(real_AB)
-        self.loss_D_real = self.criterionGAN(pred_real, True)
+        pred_real_AB = self.netD_AB(real_AB)
+        self.loss_D_realAB = self.criterionGAN(pred_real_AB, True)
+        pred_real_BA = self.netD_BA(real_AB)
+        self.loss_D_realBA = self.criterionGAN(pred_real_BA, True)
 
         # combine loss and calculate gradients
-        self.loss_D = (self.loss_D_fakeAB * 0.25 + self.loss_D_fakeBA * 0.25 + self.loss_D_real * 0.5)
+        self.loss_D = (self.loss_D_fakeAB + self.loss_D_fakeBA + self.loss_D_realAB + self.loss_D_realBA)*0.25
 
     def backward_G(self):
         """Calculate GAN and L1 loss for the generator"""
         # First, G(A) should fake the discriminator
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)
-        pred_fake_AB = self.netD(fake_AB)
+        pred_fake_AB = self.netD_AB(fake_AB)
 
         fake_BA = torch.cat((self.fake_A, self.real_B), 1)
-        pred_fake_BA = self.netD(fake_BA)
+        pred_fake_BA = self.netD_BA(fake_BA)
 
         self.loss_G_A = self.criterionGAN(pred_fake_AB, True)
         self.loss_G_B = self.criterionGAN(pred_fake_BA, True)
@@ -154,12 +158,14 @@ class TransModalModel(BaseModel):
     def optimize_parameters(self):
         self.forward()                   # compute fake images: G(A)
         # update D
-        self.set_requires_grad(self.netD, True)  # enable backprop for D
+        self.set_requires_grad(self.netD_AB, True)  # enable backprop for D
+        self.set_requires_grad(self.netD_BA, True)
         self.optimizer_D.zero_grad()     # set D's gradients to zero
         self.backward_D()                # calculate gradients for D
         self.optimizer_D.step()          # update D's weights
         # update G
-        self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
+        self.set_requires_grad(self.netD_AB, False)  # D requires no gradients when optimizing G
+        self.set_requires_grad(self.netD_BA, False)  # D requires no gradients when optimizing G
         self.optimizer_G.zero_grad()        # set G's gradients to zero
         self.backward_G()                   # calculate graidents for G
         self.optimizer_G.step()             # udpate G's weights
