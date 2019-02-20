@@ -133,6 +133,7 @@ class TransModalModel(BaseModel):
         # combine loss and calculate gradients
         #self.loss_D = (self.loss_D_AB_fake + self.loss_D_BA_fake + self.loss_D_AB_real + self.loss_D_BA_real)*0.25
         self.loss_D = (self.loss_D_AB_fake + self.loss_D_AB_real)*0.5
+        self.loss_D.backward()
 
     def backward_G(self):
         """Calculate GAN and L1 loss for the generator"""
