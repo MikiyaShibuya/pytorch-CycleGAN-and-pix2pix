@@ -72,10 +72,12 @@ class TransModalModel(BaseModel):
             self.criterionL1 = torch.nn.L1Loss()
             self.criterionCycle = torch.nn.L1Loss()
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
-            self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
-                                                lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_AB.parameters(), self.netD_BA.parameters()),
-                                                lr=opt.lr, betas=(opt.beta1, 0.999))
+            #self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
+            #                                    lr=opt.lr, betas=(opt.beta1, 0.999))
+            #self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_AB.parameters(), self.netD_BA.parameters()),
+            #                                    lr=opt.lr, betas=(opt.beta1, 0.999))
+            self.optimizer_G = torch.optim.Adam(self.netG_A.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+            self.optimizer_D = torch.optim.Adam(self.netD_AB.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
 
@@ -129,7 +131,8 @@ class TransModalModel(BaseModel):
         self.loss_D_BA_real = self.criterionGAN(pred_real_BA, True)
 
         # combine loss and calculate gradients
-        self.loss_D = (self.loss_D_AB_fake + self.loss_D_BA_fake + self.loss_D_AB_real + self.loss_D_BA_real)*0.25
+        #self.loss_D = (self.loss_D_AB_fake + self.loss_D_BA_fake + self.loss_D_AB_real + self.loss_D_BA_real)*0.25
+        self.loss_D = (self.loss_D_AB_fake + self.loss_D_AB_real)*0.5
 
     def backward_G(self):
         """Calculate GAN and L1 loss for the generator"""
@@ -152,8 +155,9 @@ class TransModalModel(BaseModel):
         self.loss_Cycle_B = self.criterionCycle(self.rec_B, self.real_B)*0
 
         # combine loss and calculate gradients
-        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_G_A_L1 + self.loss_G_B_L1 \
-                      + self.loss_Cycle_A + self.loss_Cycle_B
+        #self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_G_A_L1 + self.loss_G_B_L1 \
+        #              + self.loss_Cycle_A + self.loss_Cycle_B
+        self.loss_G = self.loss_G_A + self.loss_G_A_L1
         self.loss_G.backward()
 
     def optimize_parameters(self):
