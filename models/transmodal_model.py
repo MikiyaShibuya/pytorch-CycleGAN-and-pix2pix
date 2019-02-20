@@ -1,4 +1,5 @@
 import torch
+import itertools
 from .base_model import BaseModel
 from . import networks
 
@@ -70,8 +71,10 @@ class TransModalModel(BaseModel):
             self.criterionL1 = torch.nn.L1Loss()
             self.criterionCycle = torch.nn.L1Loss()
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
-            self.optimizer_G = torch.optim.Adam(self.netG_A.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_D = torch.optim.Adam(self.netD_AB.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+            self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
+                                                lr=opt.lr, betas=(opt.beta1, 0.999))
+            self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_AB.parameters(), self.netD_BA.parameters()),
+                                                lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
 
@@ -104,28 +107,36 @@ class TransModalModel(BaseModel):
         self.fake_A_viz = self.fake_fir(self.fake_A)
         self.rec_A_viz = self.fake_fir(self.rec_A)
 
-    def backward_D(self):
+    def backward_D_A(self):
         """Calculate GAN loss for the discriminator"""
         # Fake; stop backprop to the generator by detaching fake_B
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
         pred_fake_AB = self.netD_AB(fake_AB.detach())
         self.loss_D_AB_fake = self.criterionGAN(pred_fake_AB, False)
 
-        fake_BA = torch.cat((self.real_B, self.fake_A), 1)
-        pred_fake_BA = self.netD_BA(fake_BA.detach())
-        self.loss_D_BA_fake = self.criterionGAN(pred_fake_BA, False)
-
         # Real
         real_AB = torch.cat((self.real_A, self.real_B), 1)
         pred_real_AB = self.netD_AB(real_AB)
         self.loss_D_AB_real = self.criterionGAN(pred_real_AB, True)
 
+        # combine loss and calculate gradients
+        loss_D = (self.loss_D_AB_fake + self.loss_D_AB_real) * 0.5
+        loss_D.backward()
+
+    def backward_D_B(self):
+        """Calculate GAN loss for the discriminator"""
+        # Fake; stop backprop to the generator by detaching fake_B
+        fake_BA = torch.cat((self.real_B, self.fake_A), 1)
+        pred_fake_BA = self.netD_BA(fake_BA.detach())
+        self.loss_D_BA_fake = self.criterionGAN(pred_fake_BA, False)
+
+        # Real
         real_BA = torch.cat((self.real_B, self.real_A), 1)
         pred_real_BA = self.netD_BA(real_BA)
         self.loss_D_BA_real = self.criterionGAN(pred_real_BA, True)
         # combine loss and calculate gradients
-        self.loss_D = (self.loss_D_AB_fake + self.loss_D_AB_real) * 0.5
-        self.loss_D.backward()
+        loss_D = (self.loss_D_BA_fake + self.loss_D_BA_real) * 0.5
+        loss_D.backward()
 
     def backward_G(self):
         """Calculate GAN and L1 loss for the generator"""
@@ -141,8 +152,14 @@ class TransModalModel(BaseModel):
         # Second, G(A) = B
         self.loss_G_A_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         self.loss_G_B_L1 = self.criterionL1(self.fake_A, self.real_A) * self.opt.lambda_L1
+
+        self.loss_Cycle_A = self.criterionCycle(self.real_A, self.rec_A)
+        self.loss_Cycle_B = self.criterionCycle(self.real_B, self.rec_B)
+
         # combine loss and calculate gradients
-        self.loss_G = self.loss_G_A + self.loss_G_A_L1
+        self.loss_G = self.loss_G_A + self.loss_G_B \
+                      + self.loss_G_A_L1 + self.loss_G_B_L1 \
+                      + self.loss_Cycle_A + self.loss_Cycle_B
         self.loss_G.backward()
 
     def optimize_parameters(self):
@@ -151,7 +168,8 @@ class TransModalModel(BaseModel):
         self.set_requires_grad(self.netD_AB, True)  # enable backprop for D
         self.set_requires_grad(self.netD_BA, True)
         self.optimizer_D.zero_grad()     # set D's gradients to zero
-        self.backward_D()                # calculate gradients for D
+        self.backward_D_A()              # calculate gradients for D
+        self.backward_D_B()
         self.optimizer_D.step()          # update D's weights
         # update G
         self.set_requires_grad(self.netD_AB, False)  # D requires no gradients when optimizing G
