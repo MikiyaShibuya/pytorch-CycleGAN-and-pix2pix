@@ -124,7 +124,7 @@ class TransModalModel(BaseModel):
         real_AB = torch.cat((self.real_A, self.real_B), 1)
         pred_real_AB = self.netD_AB(real_AB)
         self.loss_D_AB_real = self.criterionGAN(pred_real_AB, True)
-        real_BA = torch.cat((self.real_B, self.real_B), 1)
+        real_BA = torch.cat((self.real_B, self.real_A), 1)
         pred_real_BA = self.netD_BA(real_BA)
         self.loss_D_BA_real = self.criterionGAN(pred_real_BA, True)
 
