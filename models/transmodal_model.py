@@ -45,7 +45,7 @@ class TransModalModel(BaseModel):
         """
         BaseModel.__init__(self, opt)
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
-        self.loss_names = ['G_A', 'G_B', 'G_A_L1', 'G_B_L1', 'D_realAB', 'D_realBA', 'D_fakeAB', 'D_fakeBA', 'Cycle_A', 'Cycle_B']
+        self.loss_names = ['G_A', 'G_B', 'G_A_L1', 'G_B_L1', 'D_AB_real', 'D_AB_fake', 'D_BA_real', 'D_BA_fake', 'Cycle_A', 'Cycle_B']
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
         self.visual_names = ['real_A_viz', 'fake_A_viz', 'rec_A_viz', 'real_B', 'fake_B', 'rec_B']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
@@ -114,18 +114,19 @@ class TransModalModel(BaseModel):
         # Fake; stop backprop to the generator by detaching fake_B
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
         pred_fake_AB = self.netD_AB(fake_AB.detach())
-        self.loss_D_fakeAB = self.criterionGAN(pred_fake_AB, False)
+        self.loss_D_AB_fake = self.criterionGAN(pred_fake_AB, False)
 
-        fake_BA = torch.cat((self.fake_A, self.real_B), 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
+        fake_BA = torch.cat((self.real_B, self.fake_A), 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
         pred_fake_BA = self.netD_BA(fake_BA.detach())
-        self.loss_D_fakeBA = self.criterionGAN(pred_fake_BA, False)
+        self.loss_D_BA_fake = self.criterionGAN(pred_fake_BA, False)
 
         # Real
         real_AB = torch.cat((self.real_A, self.real_B), 1)
         pred_real_AB = self.netD_AB(real_AB)
-        self.loss_D_realAB = self.criterionGAN(pred_real_AB, True)
-        pred_real_BA = self.netD_BA(real_AB)
-        self.loss_D_realBA = self.criterionGAN(pred_real_BA, True)
+        self.loss_D_AB_real = self.criterionGAN(pred_real_AB, True)
+        real_BA = torch.cat((self.real_B, self.real_B), 1)
+        pred_real_BA = self.netD_BA(real_BA)
+        self.loss_D_BA_real = self.criterionGAN(pred_real_BA, True)
 
         # combine loss and calculate gradients
         self.loss_D = (self.loss_D_fakeAB + self.loss_D_fakeBA + self.loss_D_realAB + self.loss_D_realBA)*0.25
@@ -136,7 +137,7 @@ class TransModalModel(BaseModel):
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)
         pred_fake_AB = self.netD_AB(fake_AB)
 
-        fake_BA = torch.cat((self.fake_A, self.real_B), 1)
+        fake_BA = torch.cat((self.real_B, self.fake_A), 1)
         pred_fake_BA = self.netD_BA(fake_BA)
 
         self.loss_G_A = self.criterionGAN(pred_fake_AB, True)
@@ -147,8 +148,8 @@ class TransModalModel(BaseModel):
         self.loss_G_B_L1 = self.criterionL1(self.fake_A, self.real_A) * self.opt.lambda_L1
 
         # Cycle consistency losses
-        self.loss_Cycle_A = self.criterionCycle(self.rec_A, self.real_A)
-        self.loss_Cycle_B = self.criterionCycle(self.rec_B, self.real_B)
+        self.loss_Cycle_A = self.criterionCycle(self.rec_A, self.real_A)*0
+        self.loss_Cycle_B = self.criterionCycle(self.rec_B, self.real_B)*0
 
         # combine loss and calculate gradients
         self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_G_A_L1 + self.loss_G_B_L1 \
