@@ -108,7 +108,7 @@ class TransModalModel(BaseModel):
         self.fake_A_viz = self.fake_fir(self.fake_A)
         self.rec_A_viz = self.fake_fir(self.rec_A)
 
-    def backward_D_A(self):
+    def backward_D_A(self, no_backward=False):
         """Calculate GAN loss for the discriminator"""
         # Fake; stop backprop to the generator by detaching fake_B
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
@@ -121,10 +121,11 @@ class TransModalModel(BaseModel):
         self.loss_D_AB_real = self.criterionGAN(pred_real_AB, True)
 
         # combine loss and calculate gradients
-        loss_D = (self.loss_D_AB_fake + self.loss_D_AB_real) * 0.5
-        loss_D.backward()
+        if not no_backward:
+            loss_D = (self.loss_D_AB_fake + self.loss_D_AB_real) * 0.5
+            loss_D.backward()
 
-    def backward_D_B(self):
+    def backward_D_B(self, no_backward=False):
         """Calculate GAN loss for the discriminator"""
         # Fake; stop backprop to the generator by detaching fake_B
         fake_BA = torch.cat((self.real_B, self.fake_A), 1)
@@ -136,10 +137,11 @@ class TransModalModel(BaseModel):
         pred_real_BA = self.netD_BA(real_BA)
         self.loss_D_BA_real = self.criterionGAN(pred_real_BA, True)
         # combine loss and calculate gradients
-        loss_D = (self.loss_D_BA_fake + self.loss_D_BA_real) * 0.5
-        loss_D.backward()
+        if not no_backward:
+            loss_D = (self.loss_D_BA_fake + self.loss_D_BA_real) * 0.5
+            loss_D.backward()
 
-    def backward_G(self):
+    def backward_G(self, no_backward=False):
         """Calculate GAN and L1 loss for the generator"""
         # First, G(A) should fake the discriminator
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)
@@ -161,7 +163,8 @@ class TransModalModel(BaseModel):
         self.loss_G = self.loss_G_A + self.loss_G_B \
                       + self.loss_G_A_L1 + self.loss_G_B_L1 \
                       + self.loss_Cycle_A + self.loss_Cycle_B
-        self.loss_G.backward()
+        if not no_backward:
+            self.loss_G.backward()
 
     def optimize_parameters(self):
         self.forward()                   # compute fake images: G(A)
@@ -178,3 +181,33 @@ class TransModalModel(BaseModel):
         self.optimizer_G.zero_grad()        # set G's gradients to zero
         self.backward_G()                   # calculate graidents for G
         self.optimizer_G.step()             # udpate G's weights
+
+    def test(self):
+        super().test(self)  # forward() method is called by this
+
+        image1 = self.real_A
+        image2 = self.fake_A.detach()
+        psnr_A = self.PSNR(image1, image2, 2.)
+        ssim_A = self.SSIM(image1, image2, multichannnel=False)
+
+        image1 = self.real_B
+        image2 = self.fake_B.detach()
+        psnr_B = self.PSNR(image1, image2, 2.)
+        ssim_B = self.SSIM(image1, image2, multichannnel=True)
+
+        return {'PSNR_A': psnr_A, 'PSNR_B': psnr_B, 'SSIM_A': ssim_A, 'SSIM_B': ssim_B}
+
+    def validation(self):
+        '''
+        Do validation, no parameter optimization, only computing losses.
+        :return:
+        '''
+        self.set_requires_grad(self.netD_AB, False)
+        self.set_requires_grad(self.netD_BA, False)
+        self.set_requires_grad(self.netG_A, False)
+        self.set_requires_grad(self.netG_B, False)
+        self.backward_D_A(no_backward=True)
+        self.backward_D_B(no_backward=True)
+        self.backward_G(no_backward=True)
+        self.set_requires_grad(self.netG_A, True)
+        self.set_requires_grad(self.netG_B, True)

@@ -88,6 +88,10 @@ class BaseModel(ABC):
             self.load_networks(load_suffix)
         self.print_networks(opt.verbose)
 
+    def validation(self):
+        pass
+
+
     def eval(self):
         """Make models eval mode during test time"""
         for name in self.model_names:

@@ -41,6 +41,7 @@ if __name__ == '__main__':
         iter_data_time = time.time()    # timer for data loading per iteration
         epoch_iter = 0                  # the number of training iterations in current epoch, reset to 0 every epoch
 
+        
         for i, data in enumerate(dataset):  # inner loop within one epoch
             iter_start_time = time.time()  # timer for computation per iteration
             if total_iters % opt.print_freq == 0:
@@ -81,6 +82,7 @@ if __name__ == '__main__':
             for i, data in enumerate(validation_set):
                 model.set_input(data)
                 model.forward()
+                model.validation()
                 losses = model.get_current_losses()
                 N = 1
                 if len(losses_sum.keys()) == 0:
@@ -94,7 +96,7 @@ if __name__ == '__main__':
                 losses_sum[k] /= N
 
             if opt.display_id > 0:
-                visualizer.display_current_results(model.get_current_visuals(), epoch, save_result, tag='validation')
+                visualizer.display_current_results(model.get_current_visuals(), epoch, save_result=False, tag='validation')
                 visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, losses_sum, tag='validation')
 
         print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
