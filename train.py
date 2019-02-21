@@ -41,7 +41,7 @@ if __name__ == '__main__':
         iter_data_time = time.time()    # timer for data loading per iteration
         epoch_iter = 0                  # the number of training iterations in current epoch, reset to 0 every epoch
 
-        
+
         for i, data in enumerate(dataset):  # inner loop within one epoch
             iter_start_time = time.time()  # timer for computation per iteration
             if total_iters % opt.print_freq == 0:
@@ -87,9 +87,9 @@ if __name__ == '__main__':
                 N = 1
                 if len(losses_sum.keys()) == 0:
                     for k in losses.keys():
-                        losses_sum.update({'val_'+k: 0})
+                        losses_sum.update({k: 0})
                 for k, l in losses.items():
-                    losses_sum['val_'+k] += l
+                    losses_sum[k] += l
                     N += 1
 
             for k in losses_sum.keys():
@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
             if opt.display_id > 0:
                 visualizer.display_current_results(model.get_current_visuals(), epoch, save_result=False, tag='validation')
-                visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, losses_sum, tag='validation')
+                visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, losses_sum, tag='validation', is_validation=True)
 
         print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
         model.update_learning_rate()                     # update learning rates at the end of every epoch.
