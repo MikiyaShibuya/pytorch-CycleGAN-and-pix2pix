@@ -101,7 +101,7 @@ class Visualizer():
         """
         if self.display_id > 0:  # show images in the browser using tensorboardX
             for label, image in visuals.items():
-                img = np.squeeze(image.detach().numpy(), axis=0)
+                img = np.squeeze(image.detach().cpu().numpy(), axis=0)
                 img = img * 0.5 + 0.5  # Convert to 0-1 value.
                 self.writer.add_image(tag+'/'+label, img, epoch)
 
@@ -128,7 +128,7 @@ class Visualizer():
                 webpage.add_images(ims, txts, links, width=self.win_size)
             webpage.save()
 
-    def plot_current_losses(self, epoch, counter_ratio, losses, tag='plot'):
+    def plot_current_losses(self, epoch, counter_ratio, losses, tag='plot', is_validation=False):
         """display the current losses on visdom display: dictionary of error labels and values
 
         Parameters:
@@ -137,11 +137,10 @@ class Visualizer():
             losses (OrderedDict)  -- training losses stored in the format of (name, float) pairs
         """
 
-        for label, loss in losses.items():
-            if label.startswith('val_'):
-                label = label.split('val_')[1]
         self.writer.add_scalars(tag, losses, self.writer_plot_count)
-        self.writer_plot_count += 1
+
+        if not is_validation:
+            self.writer_plot_count += 1
 
     # losses: same format as |losses| of plot_current_losses
     def print_current_losses(self, epoch, iters, losses, t_comp, t_data):
