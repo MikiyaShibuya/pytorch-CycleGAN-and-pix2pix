@@ -42,7 +42,7 @@ def tensor2np(input_image, imtype=np.float32):
         image_numpy = np.squeeze(image_numpy)
 
         if len(image_numpy.shape) == 3:  # C, H, W -> H, W, C
-            image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0  # post-processing: tranpose and scaling
+            image_numpy = np.transpose(image_numpy, (1, 2, 0))  # post-processing: tranpose and scaling
     else:  # if it is a numpy array, do nothing
         image_numpy = input_image
     return image_numpy.astype(imtype)
