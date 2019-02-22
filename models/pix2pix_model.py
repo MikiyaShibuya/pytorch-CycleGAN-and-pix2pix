@@ -1,7 +1,7 @@
 import torch
 from .base_model import BaseModel
 from . import networks
-
+from util import util
 
 class Pix2PixModel(BaseModel):
     """ This class implements the pix2pix model, for learning a mapping from input images to output images given paired data.
@@ -112,6 +112,16 @@ class Pix2PixModel(BaseModel):
         # combine loss and calculate gradients
         self.loss_G = self.loss_G_GAN + self.loss_G_L1
         self.loss_G.backward()
+
+    def test(self):
+        super().test()  # forward() method is called by this
+
+        real_B = util.tensor2np(self.real_B)
+        fake_B = util.tensor2np(self.fake_B.detach())
+        psnr_B = self.PSNR(real_B, fake_B, 2.)
+        ssim_B = self.SSIM(real_B, fake_B, multichannel=len(real_B.shape)==3, data_range=2)
+
+        return {'PSNR': psnr_B,'SSIM': ssim_B}
 
     def optimize_parameters(self):
         self.forward()                   # compute fake images: G(A)
