@@ -2,6 +2,7 @@ import torch
 import itertools
 from .base_model import BaseModel
 from . import networks
+from util import util
 
 
 class TransModalModel(BaseModel):
@@ -183,17 +184,17 @@ class TransModalModel(BaseModel):
         self.optimizer_G.step()             # udpate G's weights
 
     def test(self):
-        super().test(self)  # forward() method is called by this
+        super().test()  # forward() method is called by this
 
-        image1 = self.real_A
-        image2 = self.fake_A.detach()
-        psnr_A = self.PSNR(image1, image2, 2.)
-        ssim_A = self.SSIM(image1, image2, multichannnel=False)
+        real_A = util.tensor2np(self.real_A)
+        fake_A = util.tensor2np(self.fake_A.detach())
+        psnr_A = self.PSNR(real_A, fake_A, 2.)
+        ssim_A = self.SSIM(real_A, fake_A, multichannel=len(real_A.shape)==3, data_range=2)
 
-        image1 = self.real_B
-        image2 = self.fake_B.detach()
-        psnr_B = self.PSNR(image1, image2, 2.)
-        ssim_B = self.SSIM(image1, image2, multichannnel=True)
+        real_B = util.tensor2np(self.real_B)
+        fake_B = util.tensor2np(self.fake_B.detach())
+        psnr_B = self.PSNR(real_B, fake_B, 2.)
+        ssim_B = self.SSIM(real_B, fake_B, multichannel=len(real_B.shape)==3, data_range=2)
 
         return {'PSNR_A': psnr_A, 'PSNR_B': psnr_B, 'SSIM_A': ssim_A, 'SSIM_B': ssim_B}
 

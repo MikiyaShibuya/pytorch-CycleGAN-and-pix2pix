@@ -53,14 +53,30 @@ if __name__ == '__main__':
     # For [CycleGAN]: It should not affect CycleGAN as CycleGAN uses instancenorm without dropout.
     if opt.eval:
         model.eval()
+
+    evaluations = {}
+    N = 0
     for i, data in enumerate(dataset):
         if i >= opt.num_test:  # only apply our model to opt.num_test images.
             break
         model.set_input(data)  # unpack data from data loader
-        model.test()           # run inference
+        evals = model.test()           # run inference
+        text = ""
+        for k, v in evals.items():
+            if k not in evaluations.keys():
+                evaluations.update({k: v})
+            else:
+                evaluations[k] += v
+            text += "'{}': {}, ".format(k, v)
+        N += 1
+
         visuals = model.get_current_visuals()  # get image results
         img_path = model.get_image_paths()     # get image paths
         if i % 5 == 0:  # save images to an HTML file
             print('processing (%04d)-th image... %s' % (i, img_path))
-        save_images(webpage, visuals, img_path, aspect_ratio=opt.aspect_ratio, width=opt.display_winsize)
+        save_images(webpage, visuals, img_path, message=text, aspect_ratio=opt.aspect_ratio, width=opt.display_winsize)
     webpage.save()  # save the HTML
+
+    for k in evaluations:
+        evaluations[k] /= N
+    print(evaluations)
