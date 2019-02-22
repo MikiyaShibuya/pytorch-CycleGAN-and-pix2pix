@@ -13,7 +13,7 @@ else:
     VisdomExceptionBase = ConnectionError
 
 
-def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256):
+def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256, message=""):
     """Save images to the disk.
 
     Parameters:
@@ -29,7 +29,10 @@ def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256):
     short_path = ntpath.basename(image_path[0])
     name = os.path.splitext(short_path)[0]
 
+    webpage.add_hr()
     webpage.add_header(name)
+    if len(message) > 0:
+        webpage.add_text(message)
     ims, txts, links = [], [], []
 
     for label, im_data in visuals.items():

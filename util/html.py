@@ -1,5 +1,5 @@
 import dominate
-from dominate.tags import meta, h3, table, tr, td, p, a, img, br
+from dominate.tags import meta, h3, table, tr, td, p, a, img, br, hr, div
 import os
 
 
@@ -44,6 +44,19 @@ class HTML:
         """
         with self.doc:
             h3(text)
+
+    def add_text(self, text):
+        """Insert a header to the HTML file
+
+        Parameters:
+            text (str) -- the header text
+        """
+        with self.doc:
+            div(text)
+
+    def add_hr(self):
+        with self.doc:
+            hr()
 
     def add_images(self, ims, txts, links, width=400):
         """add images to the HTML file
