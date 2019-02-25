@@ -15,8 +15,8 @@ class Compose(object):
             fir_image, rgb_image = t(fir_image, rgb_image)
 
         fir_image = fir_image.reshape(1, fir_image.shape[0], fir_image.shape[1])
-        fir_tensor = torch.tensor(fir_image)
-        rgb_tensor = torch.tensor(rgb_image.transpose(2,0,1))
+        fir_tensor = torch.tensor(fir_image).type(torch.float32)
+        rgb_tensor = torch.tensor(rgb_image.transpose(2,0,1)).type(torch.float32)
         return fir_tensor, rgb_tensor
 
 class RandomHorizontalFlip(object):
@@ -27,12 +27,11 @@ class RandomHorizontalFlip(object):
             return fir_image, rgb_image
 
 class RandomCrop(object):
-    # crop_size以上のランダムなサイズで正方形クロップを行う
+    # crop_sizeのランダムな位置で正方形クロップを行う
     def __init__(self, crop_size):
-        self.min_crop_size = crop_size
+        self.crop_size = crop_size
     def __call__(self, fir_image, rgb_image):
-        max_crop_size = np.min(fir_image.shape)
-        crop_size = int(np.random.uniform(self.min_crop_size, max_crop_size))
+        crop_size = self.crop_size
         x = np.random.randint(fir_image.shape[1]-crop_size+1)
         y = np.random.randint(fir_image.shape[0]-crop_size+1)
         return fir_image[y:y+crop_size, x:x+crop_size], rgb_image[y:y+crop_size, x:x+crop_size, :]
@@ -41,8 +40,8 @@ class Scale(object):
     def __init__(self, size):
         self.size = size
     def __call__(self, fir, rgb):
-        fir_image = transform.resize(fir, (self.size, self.size), mode='reflect', anti_aliasing=True).astype(np.float32)
-        rgb_image = transform.resize(rgb, (self.size, self.size), mode='reflect', anti_aliasing=True).astype(np.float32)
+        fir_image = transform.resize(fir, (self.size, self.size), mode='reflect', anti_aliasing=True)
+        rgb_image = transform.resize(rgb, (self.size, self.size), mode='reflect', anti_aliasing=True)
         return fir_image, rgb_image
 
 class Rotate(object):

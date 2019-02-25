@@ -37,9 +37,9 @@ class PairedDataset(BaseDataset):
 
         self.transforms = Compose([
             RandomHorizontalFlip(),
-            RandomCrop(opt.load_size),
+            Scale(opt.load_size),
             Rotate(2.0),
-            Scale(opt.crop_size)
+            RandomCrop(opt.crop_size)
         ])
 
     def __oldgetitem__(self, index):
