@@ -24,7 +24,7 @@ from data import create_dataset, create_validation_set
 from models import create_model
 from util.tb_visualizer import Visualizer
 
-if __name__ == '__main__':
+def main():
     opt = TrainOptions().parse()   # get training options
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     validation_set = create_validation_set(opt)
@@ -101,3 +101,7 @@ if __name__ == '__main__':
 
         print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
         model.update_learning_rate()                     # update learning rates at the end of every epoch.
+
+
+if __name__ == '__main__':
+    main()
