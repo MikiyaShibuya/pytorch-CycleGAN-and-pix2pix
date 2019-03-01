@@ -157,8 +157,8 @@ class TransModalModel(BaseModel):
         self.loss_G_A_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         self.loss_G_B_L1 = self.criterionL1(self.fake_A, self.real_A) * self.opt.lambda_L1
 
-        self.loss_Cycle_A = self.criterionCycle(self.rec_A, self.real_A) * self.opt.lambda_Cycle
-        self.loss_Cycle_B = self.criterionCycle(self.rec_B, self.real_B) * self.opt.lambda_Cycle
+        self.loss_Cycle_A = self.criterionCycle(self.rec_A, self.real_A) * self.opt.lambda_Cycle_A
+        self.loss_Cycle_B = self.criterionCycle(self.rec_B, self.real_B) * self.opt.lambda_Cycle_B
 
         # combine loss and calculate gradients
         self.loss_G = self.loss_G_A + self.loss_G_B \
