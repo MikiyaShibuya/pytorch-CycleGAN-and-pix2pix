@@ -2,8 +2,7 @@ import os.path
 from data.base_dataset import BaseDataset, get_params, get_transform
 from data.image_folder import make_paired_dataset
 from PIL import Image
-import numpy as np
-from data.transformation import Compose, RandomHorizontalFlip, Scale, RandomCrop, Rotate
+from data.transformation import *
 
 
 class PairedDataset(BaseDataset):
@@ -35,12 +34,21 @@ class PairedDataset(BaseDataset):
         self.input_nc = self.opt.output_nc if btoA else self.opt.input_nc       # get the number of channels of input image
         self.output_nc = self.opt.input_nc if btoA else self.opt.output_nc      # get the number of channels of output image
 
-        self.transforms = Compose([
-            RandomHorizontalFlip(),
-            Scale(opt.load_size),
-            Rotate(2.0),
-            RandomCrop(opt.crop_size)
-        ])
+        if opt.phase == 'train':
+            tf_terms = [
+                RandomHorizontalFlip(),
+                Scale(opt.load_size),
+                Rotate(2.0),
+                RandomCrop(opt.crop_size)
+            ]
+        elif opt.phase == 'test':
+            tf_terms = [
+                RandomHorizontalFlip(),
+                Scale(opt.load_size),
+                CenterCrop(opt.crop_size)
+            ]
+            
+        self.transforms = Compose(tf_terms)
 
     def __oldgetitem__(self, index):
         """Return a data point and its metadata information.
