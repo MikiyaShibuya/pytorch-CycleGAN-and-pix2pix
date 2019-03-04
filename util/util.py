@@ -48,6 +48,11 @@ def tensor2np(input_image, imtype=np.float32):
     return image_numpy.astype(imtype)
 
 
+def convert_fake_fir(fir_tensor):  # convert
+    fir = fir_tensor.clone()
+    fir.detach()
+    return (torch.clamp(fir, -0.8, 0.2) + 0.3) * 2
+
 def diagnose_network(net, name='network'):
     """Calculate and print the mean of average absolute(gradients)
 

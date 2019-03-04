@@ -92,13 +92,8 @@ class TransModalModel(BaseModel):
         AtoB = self.opt.direction == 'AtoB'
         self.real_A = input['A' if AtoB else 'B'].to(self.device)
         self.real_B = input['B' if AtoB else 'A'].to(self.device)
-        self.real_A_viz = self.fake_fir(self.real_A)
+        self.real_A_viz = util.convert_fake_fir(self.real_A)
         self.image_paths = input['A_paths' if AtoB else 'B_paths']
-
-    def fake_fir(self, fir_tensor):
-        fir = fir_tensor.clone()
-        fir.detach()
-        return (torch.clamp(fir, -0.8, 0.2) + 0.3) * 2
 
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
