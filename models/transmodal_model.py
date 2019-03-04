@@ -102,8 +102,8 @@ class TransModalModel(BaseModel):
         self.fake_A = self.netG_B(self.real_B)
         self.rec_B = self.netG_A(self.fake_A)
 
-        self.fake_A_viz = self.fake_fir(self.fake_A)
-        self.rec_A_viz = self.fake_fir(self.rec_A)
+        self.fake_A_viz = util.convert_fake_fir(self.fake_A)
+        self.rec_A_viz = util.convert_fake_fir(self.rec_A)
 
     def backward_D_A(self, no_backward=False):
         """Calculate GAN loss for the discriminator"""
