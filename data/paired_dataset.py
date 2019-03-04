@@ -44,10 +44,10 @@ class PairedDataset(BaseDataset):
         elif opt.phase == 'test':
             tf_terms = [
                 RandomHorizontalFlip(),
-                Scale(opt.load_size),
-                CenterCrop(opt.crop_size)
+                CenterCrop(),
+                Scale(opt.load_size)
             ]
-            
+
         self.transforms = Compose(tf_terms)
 
     def __oldgetitem__(self, index):

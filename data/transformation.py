@@ -37,11 +37,11 @@ class RandomCrop(object):
         return fir_image[y:y+crop_size, x:x+crop_size], rgb_image[y:y+crop_size, x:x+crop_size, :]
 
 class CenterCrop(object):
-    def __init__(self, crop_size):
-        self.crop_size = crop_size
+    def __init__(self):
+        pass
 
     def __call__(self, fir_image, rgb_image):
-        crop_size = self.crop_size
+        crop_size = min(fir_image.shape)
         x = (fir_image.shape[1] - crop_size)//2
         y = (fir_image.shape[0] - crop_size)//2
         return fir_image[y:y + crop_size, x:x + crop_size], rgb_image[y:y + crop_size, x:x + crop_size, :]
