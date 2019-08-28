@@ -43,7 +43,6 @@ class PairedDataset(BaseDataset):
             ]
         elif opt.phase == 'test':
             tf_terms = [
-                RandomHorizontalFlip(),
                 CenterCrop(),
                 Scale(opt.load_size)
             ]
