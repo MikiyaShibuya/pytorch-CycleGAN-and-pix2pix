@@ -26,6 +26,32 @@ def tensor2im(input_image, imtype=np.uint8):
         image_numpy = input_image
     return image_numpy.astype(imtype)
 
+def tensor2np(input_image, imtype=np.float32):
+    """"Converts a Tensor array into a numpy image array.
+
+    Parameters:
+        input_image (tensor) --  the input image tensor array
+        imtype (type)        --  the desired type of the converted numpy array
+    """
+    if not isinstance(input_image, np.ndarray):
+        if isinstance(input_image, torch.Tensor):  # get the data from a variable
+            image_tensor = input_image.data
+        else:
+            return input_image
+        image_numpy = image_tensor[0].cpu().float().numpy()  # convert it into a numpy array
+        image_numpy = np.squeeze(image_numpy)
+
+        if len(image_numpy.shape) == 3:  # C, H, W -> H, W, C
+            image_numpy = np.transpose(image_numpy, (1, 2, 0))  # post-processing: tranpose and scaling
+    else:  # if it is a numpy array, do nothing
+        image_numpy = input_image
+    return image_numpy.astype(imtype)
+
+
+def convert_fake_fir(fir_tensor):  # convert
+    fir = fir_tensor.clone()
+    fir.detach()
+    return (torch.clamp(fir, -0.8, 0.2) + 0.3) * 2
 
 def diagnose_network(net, name='network'):
     """Calculate and print the mean of average absolute(gradients)

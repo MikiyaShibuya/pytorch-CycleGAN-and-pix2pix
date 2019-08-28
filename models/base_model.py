@@ -3,6 +3,8 @@ import torch
 from collections import OrderedDict
 from abc import ABC, abstractmethod
 from . import networks
+from skimage.measure import compare_ssim
+import numpy as np
 
 
 class BaseModel(ABC):
@@ -88,6 +90,10 @@ class BaseModel(ABC):
             self.load_networks(load_suffix)
         self.print_networks(opt.verbose)
 
+    def validation(self):
+        pass
+
+
     def eval(self):
         """Make models eval mode during test time"""
         for name in self.model_names:
@@ -104,6 +110,16 @@ class BaseModel(ABC):
         with torch.no_grad():
             self.forward()
             self.compute_visuals()
+
+    def PSNR(self, image1, image2, range):
+        mse = np.mean((image1 - image2)**2)
+        assert(mse != 0)
+        psnr = 10 * np.log10(range**2/mse)
+        return psnr
+
+    def SSIM(self, image1, image2, multichannel, data_range=None):
+        ssim = compare_ssim(image1, image2, multichannel=multichannel, data_range=data_range)
+        return ssim
 
     def compute_visuals(self):
         """Calculate additional output images for visdom and HTML visualization"""
